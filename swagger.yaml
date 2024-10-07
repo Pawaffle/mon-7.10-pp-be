@@ -1,0 +1,560 @@
+openapi: 3.0.0
+info:
+  title: Combined API (User Authentication, Tour, and Todo Task)
+  version: 1.0.0
+  description: API for user authentication, tour management, and todo task management
+
+servers:
+  - url: http://localhost:5000/api
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    User:
+      type: object
+      properties:
+        name:
+          type: string
+          example: John Doe
+        email:
+          type: string
+          format: email
+          example: john.doe@example.com
+        password:
+          type: string
+          format: password
+          example: Helsinki1!
+          description: Password must be strong (e.g., at least 8 characters, including uppercase, lowercase, number, and special character)
+
+    Tour:
+      type: object
+      properties:
+        _id:
+          type: string
+        name:
+          type: string
+        info:
+          type: string
+        image:
+          type: string
+        price:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    TourInput:
+      type: object
+      required:
+        - name
+        - info
+        - image
+        - price
+      properties:
+        name:
+          type: string
+        info:
+          type: string
+        image:
+          type: string
+        price:
+          type: string
+
+    TodoTask:
+      type: object
+      required:
+        - title
+        - description
+        - dueDate
+        - completed
+      properties:
+        _id:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        dueDate:
+          type: string
+          format: date
+        completed:
+          type: boolean
+        user_id:
+          type: string
+
+    TodoTaskInput:
+      type: object
+      required:
+        - title
+        - description
+        - dueDate
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        dueDate:
+          type: string
+          format: date
+        completed:
+          type: boolean
+
+    Error:
+      type: object
+      properties:
+        message:
+          type: string
+
+paths:
+  /users/signup:
+    post:
+      summary: Register a new user
+      tags:
+        - Users
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        '201':
+          description: User created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  email:
+                    type: string
+                    example: john.doe@example.com
+                  token:
+                    type: string
+                    example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Password not strong enough"
+
+  /users/login:
+    post:
+      summary: Authenticate a user
+      tags:
+        - Users
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: john.doe@example.com
+                password:
+                  type: string
+                  format: password
+                  example: Helsinki1!
+      responses:
+        '200':
+          description: User authenticated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  email:
+                    type: string
+                    example: john.doe@example.com
+                  token:
+                    type: string
+                    example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Invalid credentials"
+
+  /tours:
+    get:
+      summary: Get all tours
+      tags:
+        - Tours
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Tour'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    post:
+      summary: Create a new tour
+      tags:
+        - Tours
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TourInput'
+      responses:
+        '201':
+          description: Tour created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Tour'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /tours/{tourId}:
+    get:
+      summary: Get a tour by ID
+      tags:
+        - Tours
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: tourId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Tour'
+        '404':
+          description: Tour not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    put:
+      summary: Update a tour
+      tags:
+        - Tours
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: tourId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TourInput'
+      responses:
+        '200':
+          description: Tour updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Tour'
+        '404':
+          description: Tour not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    delete:
+      summary: Delete a tour
+      tags:
+        - Tours
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: tourId
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Tour deleted successfully
+        '404':
+          description: Tour not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /todotasks:
+    get:
+      summary: Get all TodoTasks
+      tags:
+        - TodoTasks
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: List of todo tasks
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TodoTask'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Authentication token is invalid or expired"
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Server Error"
+    post:
+      summary: Add a new TodoTask
+      tags:
+        - TodoTasks
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TodoTaskInput'
+      responses:
+        '201':
+          description: The created todo task
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TodoTask'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Authentication token is invalid or expired"
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Server Error"
+
+  /todotasks/{id}:
+    get:
+      summary: Get a single TodoTask by ID
+      tags:
+        - TodoTasks
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: The requested todo task
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TodoTask'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Authentication token is invalid or expired"
+        '404':
+          description: Task not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "No such todoTask"
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Server Error"
+
+    put:
+      summary: Update a TodoTask by ID
+      tags:
+        - TodoTasks
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          description: The ID of the todo task to update
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                  example: "Updated task title"
+                description:
+                  type: string
+                  example: "This is an updated description for the task"
+                dueDate:
+                  type: string
+                  format: date
+                  example: "2023-12-31"
+                completed:
+                  type: boolean
+                  example: true
+            example:
+              title: "Updated task title"
+              description: "This is an updated description for the task"
+              dueDate: "2023-12-31"
+              completed: true
+      responses:
+        '200':
+          description: The updated task
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TodoTask'
+              example:
+                _id: "60d5ecb74e4d7b2d1c5e1c2f"
+                title: "Updated task title"
+                description: "This is an updated description for the task"
+                dueDate: "2023-12-31"
+                completed: true
+                user_id: "60d5ecb74e4d7b2d1c5e1c30"
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Invalid input data"
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Authentication token is invalid or expired"
+        '404':
+          description: Task not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "TodoTask not found"
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "An unexpected error occurred"
+
+    delete:
+      summary: Delete a TodoTask by ID
+      tags:
+        - TodoTasks
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: No content, task deleted
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Authentication token is invalid or expired"
+        '404':
+          description: Task not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example: 
+                error: "TodoTask not found"
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Server Error"
