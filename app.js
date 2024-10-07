@@ -9,7 +9,7 @@ const tourRouter = require("./routers/tourRouter");
 
 const swaggerUi = require("swagger-ui-express");
 const YAML = require("yamljs");
-const swaggerDocument = YAML.load("./swagger_tour.yaml"); // Load the YAML file Load swagger.json
+const swaggerDocument = YAML.load("./swagger_todo.yaml"); // Load the YAML file Load swagger.json
 // const swaggerDocument = YAML.load("./swagger_tour.yaml");
 
 // express app
